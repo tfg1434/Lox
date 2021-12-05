@@ -19,4 +19,4 @@ enum TokenType {
     EOF,
 }
 
-record class Token(TokenType Type, string Lexeme, Maybe<OneOf<int, string>> Literal);
+record class Token(TokenType Type, string Lexeme, Maybe<Literal> Literal, int Line);
