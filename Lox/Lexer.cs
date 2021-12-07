@@ -36,10 +36,13 @@ class Lexer {
 
         char Advance() => src[end++];
 
-        Unit AdvanceWhile(Func<char, bool> p) {
-            while (p(Peek()) && !IsEnd()) Advance();
+        string AdvanceWhile(Func<char, bool> p) {
+            string s = "";
+            
+            while (p(Peek()) && !IsEnd()) 
+                s += Advance();
 
-            return Unit();
+            return s;
         }
         
         bool Match(char c) {
@@ -69,7 +72,7 @@ class Lexer {
             '=' => AddToken(Match('=') ? EQUAL_EQUAL : EQUAL),
             '<' => AddToken(Match('=') ? LESS_EQUAL : LESS),
             '>' => AddToken(Match('=') ? GREATER_EQUAL : GREATER),
-            '/'
+            '/' => Match('/') ? (state, AdvanceWhile(c => c != '\n'), line, errors) : AddToken(SLASH),
             
             _ => Report(new(line, $"Unexpected character {c}.")),
         };
