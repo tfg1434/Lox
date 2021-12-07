@@ -1,4 +1,5 @@
-﻿using static Lox.TokenType;
+﻿using System.Diagnostics.CodeAnalysis;
+using static Lox.TokenType;
 
 namespace Lox; 
 
@@ -7,7 +8,7 @@ class Lexer {
     
     public Lexer(string src)
         => _src = src;
-
+    
     private ((string Str, int Line) State, Lst<Token> Tokens, Lst<CodeError> Errors) 
         LexRec((string Str, int Line) state, Lst<Token> tokens, Lst<CodeError> errors) {
 
@@ -17,6 +18,12 @@ class Lexer {
         int line = state.Line;
         
         if (src == "") return (state, tokens.Append(new Token(EOF, "", Nothing, line)), errors);
+        
+        [SuppressMessage("ReSharper", "InconsistentNaming")]
+        ((string Str, int Line) State, Lst<Token> Tokens, Lst<CodeError> Errors) 
+            DefaultBut(string? Src = null, int? Line = null, Lst<Token>? Tokens = null, Lst<CodeError>? Errors = null)
+        
+            => ((Src ?? src, Line ?? line), Tokens ?? tokens, Errors ?? errors);
         
         string Curr() => src[start..end];
 
@@ -38,8 +45,9 @@ class Lexer {
 
         string AdvanceWhile(Func<char, bool> p) {
             string s = "";
-            
-            while (p(Peek()) && !IsEnd()) 
+
+            Maybe<char> peek = Peek();
+            while (peek.IsJust && p(peek.NotNothing())) 
                 s += Advance();
 
             return s;
@@ -53,29 +61,38 @@ class Lexer {
 
             return true;
         }
+
+        Maybe<char> Peek() => IsEnd() ? Nothing : Just(src[end]);
         
         bool IsEnd() => end >= src.Length;
 
         char c = Advance();
-        return c switch {
-            '(' => AddToken(L_PAREN),
-            ')' => AddToken(R_PAREN),
-            '{' => AddToken(L_CURLY),
-            '}' => AddToken(R_CURLY),
-            ',' => AddToken(COMMA),
-            '.' => AddToken(DOT),
-            '-' => AddToken(MINUS),
-            '+' => AddToken(PLUS),
-            ';' => AddToken(SEMICOLON),
-            '*' => AddToken(ASTERIK),
-            '!' => AddToken(Match('=') ? BANG_EQUAL : BANG),
-            '=' => AddToken(Match('=') ? EQUAL_EQUAL : EQUAL),
-            '<' => AddToken(Match('=') ? LESS_EQUAL : LESS),
-            '>' => AddToken(Match('=') ? GREATER_EQUAL : GREATER),
-            '/' => Match('/') ? (state, AdvanceWhile(c => c != '\n'), line, errors) : AddToken(SLASH),
-            
-            _ => Report(new(line, $"Unexpected character {c}.")),
-        };
+        
+        switch (c) { 
+            case '(': return AddToken(L_PAREN);
+            case ')': return AddToken(R_PAREN);
+            case '{': return AddToken(L_CURLY);
+            case '}': return AddToken(R_CURLY);
+            case ',': return AddToken(COMMA);
+            case '.': return AddToken(DOT);
+            case '-': return AddToken(MINUS);
+            case '+': return AddToken(PLUS);
+            case ';': return AddToken(SEMICOLON);
+            case '*': return AddToken(ASTERIK);
+            case '!': return AddToken(Match('=') ? BANG_EQUAL : BANG);
+            case '=': return AddToken(Match('=') ? EQUAL_EQUAL : EQUAL);
+            case '<': return AddToken(Match('=') ? LESS_EQUAL : LESS);
+            case '>': return AddToken(Match('=') ? GREATER_EQUAL : GREATER);
+            case '/':
+                if (Match('/'))
+                    AdvanceWhile(x => x != '\n' && !IsEnd());
+                else
+                    return AddToken(SLASH);
 
+                break;
+            case ' ' or '\r' or '\t': break;
+            case '\n': return DefaultBut(Line: line + 1);
+            
+        }
     }
 }
