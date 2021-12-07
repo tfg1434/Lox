@@ -23,7 +23,7 @@ class Lexer {
         ((string Str, int Line) State, Lst<Token> Tokens, Lst<CodeError> Errors) 
             DefaultBut(string? Src = null, int? Line = null, Lst<Token>? Tokens = null, Lst<CodeError>? Errors = null)
         
-            => ((Src ?? src, Line ?? line), Tokens ?? tokens, Errors ?? errors);
+            => ((Src ?? src + Curr(), Line ?? line), Tokens ?? tokens, Errors ?? errors);
         
         string Curr() => src[start..end];
 
@@ -33,13 +33,12 @@ class Lexer {
         ((string Str, int Line) State, Lst<Token> Tokens, Lst<CodeError> Errors)
             AddLiteral(TokenType type, Maybe<Literal> literal)
         
-        //TODO: Subtract, not add Curr()
-            => ((src + Curr(), line), tokens.Append(new Token(type, Curr(), literal, line)), errors);
+            => DefaultBut(Tokens: tokens.Append(new Token(type, Curr(), literal, line)));
 
         ((string Str, int Line) State, Lst<Token> Tokens, Lst<CodeError> Errors)
             Report(CodeError error)
 
-            => ((src + Curr(), error.Line), tokens, errors.Append(error));
+            => DefaultBut(Line: error.Line, Errors: errors.Append(error));
 
         char Advance() => src[end++];
 
