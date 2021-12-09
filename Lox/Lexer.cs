@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using Lox;
 using static Lox.TokenType;
 
 namespace Lox; 
@@ -8,6 +9,12 @@ class Lexer {
     
     public Lexer(string src)
         => _src = src;
+
+    public (Lst<Token> Tokens, Lst<CodeError> Errors) Lex() {
+        (_, Lst<Token> tokens, Lst<CodeError> errors) = LexRec((_src, 0), Lst<Token>.Empty, Lst<CodeError>.Empty);
+
+        return (Tokens: tokens, Errors: errors);
+    }
     
     private ((string Str, int Line) State, Lst<Token> Tokens, Lst<CodeError> Errors) 
         LexRec((string Str, int Line) state, Lst<Token> tokens, Lst<CodeError> errors) {
@@ -23,7 +30,7 @@ class Lexer {
         ((string Str, int Line) State, Lst<Token> Tokens, Lst<CodeError> Errors) 
             DefaultBut(string? Src = null, int? Line = null, Lst<Token>? Tokens = null, Lst<CodeError>? Errors = null)
         
-            => ((Src ?? src + Curr(), Line ?? line), Tokens ?? tokens, Errors ?? errors);
+            => LexRec((Src ?? src + Curr(), Line ?? line), Tokens ?? tokens, Errors ?? errors);
         
         string Curr() => src[start..end];
 
@@ -93,5 +100,7 @@ class Lexer {
             case '\n': return DefaultBut(Line: line + 1);
             
         }
+
+        return DefaultBut();
     }
 }

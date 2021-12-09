@@ -12,9 +12,12 @@ switch (args.Length) {
         break;
     case 1:
         //e is IOError
-        RunFile(args[0]).Run(new LiveRuntime()).Match(
+        RunFile(args[0]).Run(new()).Match(
             ioError => WriteLine(ioError.Message),
-        );
+            mCodeErrors => mCodeErrors.Match(
+                () => WriteLine("No errors"),
+                codeErrors => WriteLine("Compilation failed."))
+            );
 
         break;
     default:
