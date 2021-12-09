@@ -13,4 +13,11 @@
       <PackageReference Include="tfg.FunctionalSharp.Wrappers" Version="1.0.1" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Remove="test.lox" />
+      <Content Include="test.lox">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
+
 </Project>
