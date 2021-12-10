@@ -30,7 +30,7 @@ class Lexer {
         ((string Str, int Line) State, Lst<Token> Tokens, Lst<CodeError> Errors) 
             DefaultBut(string? Src = null, int? Line = null, Lst<Token>? Tokens = null, Lst<CodeError>? Errors = null)
         
-            => LexRec((Src ?? src + Curr(), Line ?? line), Tokens ?? tokens, Errors ?? errors);
+            => LexRec((Src ?? src[end..], Line ?? line), Tokens ?? tokens, Errors ?? errors);
         
         string Curr() => src[start..end];
 
@@ -53,8 +53,10 @@ class Lexer {
             string s = "";
 
             Maybe<char> peek = Peek();
-            while (peek.IsJust && p(peek.NotNothing())) 
+            while (peek.IsJust && p(peek.NotNothing())) {
+                peek = Peek();
                 s += Advance();
+            }
 
             return s;
         }
