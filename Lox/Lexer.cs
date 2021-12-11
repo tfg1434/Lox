@@ -5,6 +5,25 @@ using static Lox.TokenType;
 namespace Lox; 
 
 class Lexer {
+    private static readonly Map<string, TokenType> _keywords = Map(
+        ("and", AND),
+        ("class", CLASS),
+        ("else", ELSE),
+        ("false", FALSE),
+        ("for", FOR),
+        ("fun", FUN),
+        ("if", IF),
+        ("nil", NIL),
+        ("or", OR),
+        ("print", PRINT),
+        ("return", RETURN),
+        ("base", BASE),
+        ("this", THIS),
+        ("true", TRUE),
+        ("var", VAR),
+        ("while", WHILE)
+    );
+    
     private readonly string _src;
     
     public Lexer(string src)
@@ -118,7 +137,8 @@ class Lexer {
             case >= '0' and <= '9':
                 AdvanceWhile(char.IsDigit);
 
-                if (Peek() == '.' && char.IsDigit(PeekNext())) {
+                Maybe<char> peekNext;
+                if (Peek() == '.' && (peekNext = PeekNext()).IsJust && char.IsDigit(peekNext.NotNothing())) {
                     //consume .
                     Advance();
                     
@@ -129,11 +149,12 @@ class Lexer {
             case >= 'a' and <= 'z' or >= 'A' and <= 'Z' or '_':
                 AdvanceWhile(x => char.IsDigit(x) || x is >= 'a' and <= 'z' or >= 'A' and <= 'Z' or '_');
 
-                return AddLiteral(IDENTIFIER, Just((Literal) Curr()));
+                string txt = src[start..end];
+                Maybe<TokenType> type = _keywords.Get(txt);
+
+                return AddToken(type.Match(() => IDENTIFIER, t => t));
             default: 
                 return Report(new(line, $"Unexpected character {c}."));
         }
-
-        return DefaultBut();
     }
 }

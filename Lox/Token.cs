@@ -20,3 +20,4 @@ enum TokenType {
 }
 
 record class Token(TokenType Type, string Lexeme, Maybe<Literal> Literal, int Line);
+
