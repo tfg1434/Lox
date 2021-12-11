@@ -52,11 +52,9 @@ class Lexer {
         string AdvanceWhile(Func<char, bool> p) {
             string s = "";
 
-            Maybe<char> peek = Peek();
-            while (peek.IsJust && p(peek.NotNothing())) {
-                peek = Peek();
+            Maybe<char> peek;
+            while ((peek = Peek()).IsJust && p(peek.NotNothing()))
                 s += Advance();
-            }
 
             return s;
         }
