@@ -126,6 +126,10 @@ class Lexer {
                 }
 
                 return AddLiteral(NUMBER, Just((Literal) double.Parse(Curr())));
+            case >= 'a' and <= 'z' or >= 'A' and <= 'Z' or '_':
+                AdvanceWhile(x => char.IsDigit(x) || x is >= 'a' and <= 'z' or >= 'A' and <= 'Z' or '_');
+
+                return AddLiteral(IDENTIFIER, Just((Literal) Curr()));
             default: 
                 return Report(new(line, $"Unexpected character {c}."));
         }
