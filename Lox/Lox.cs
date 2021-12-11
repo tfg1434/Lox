@@ -8,6 +8,6 @@ public static class Lox {
         foreach (Token token in tokens)
             Console.WriteLine(token);
 
-        return errors.Count == 0 ? Just(errors) : Nothing;
+        return errors.Count == 0 ? Nothing : Just(errors);
     }
 }
