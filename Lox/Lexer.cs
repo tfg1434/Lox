@@ -53,9 +53,11 @@ class Lexer {
             string s = "";
 
             Maybe<char> peek;
-            while ((peek = Peek()).IsJust && p(peek.NotNothing()))
+            while ((peek = Peek()).IsJust && p(peek.NotNothing())) {
+                if (peek.NotNothing() == '\n') line++;
                 s += Advance();
-
+            }
+            
             return s;
         }
         
@@ -70,10 +72,12 @@ class Lexer {
 
         Maybe<char> Peek() => IsEnd() ? Nothing : Just(src[end]);
         
+        Maybe<char> PeekNext() => IsEnd() ? Nothing : Just(src[end + 1]);
+        
         bool IsEnd() => end >= src.Length;
 
         char c = Advance();
-        
+
         switch (c) { 
             case '(': return AddToken(L_PAREN);
             case ')': return AddToken(R_PAREN);
@@ -90,15 +94,40 @@ class Lexer {
             case '<': return AddToken(Match('=') ? LESS_EQUAL : LESS);
             case '>': return AddToken(Match('=') ? GREATER_EQUAL : GREATER);
             case '/':
-                if (Match('/'))
+                if (Match('/')) {
                     AdvanceWhile(x => x != '\n' && !IsEnd());
+
+                    return DefaultBut();
+                }
                 else
                     return AddToken(SLASH);
-
-                break;
-            case ' ' or '\r' or '\t': break;
+            case ' ' or '\r' or '\t': return DefaultBut();
             case '\n': return DefaultBut(Line: line + 1);
-            
+            case '"':
+                AdvanceWhile(x => x != '"');
+
+                if (IsEnd())
+                    return Report(new(line, "Unterminated string."));
+
+                //closing "
+                Advance();
+                
+                string value = src[(start + 1)..(end - 1)];
+                //                            generic fun
+                return AddLiteral(STRING, Just((Literal) value));
+            case >= '0' and <= '9':
+                AdvanceWhile(char.IsDigit);
+
+                if (Peek() == '.' && char.IsDigit(PeekNext())) {
+                    //consume .
+                    Advance();
+                    
+                    AdvanceWhile(char.IsDigit);
+                }
+
+                return AddLiteral(NUMBER, Just((Literal) double.Parse(Curr())));
+            default: 
+                return Report(new(line, $"Unexpected character {c}."));
         }
 
         return DefaultBut();
