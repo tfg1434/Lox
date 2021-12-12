@@ -61,13 +61,14 @@ class Parser {
             return expr;
         }
 
-        Expr ParseFactor() {
-            Expr expr = ParseUnary();
+        Either<ParseError, Expr> ParseFactor() {
+            Either<ParseError, Expr> expr = ParseUnary();
             
             while (Match(SLASH, ASTERIK)) {
                 Token op = Previous();
-                Expr right = ParseUnary();
-                expr = new Binary(expr, op, right);
+                Either<ParseError, Expr> right = ParseUnary();
+
+                expr = expr.Map(e => new Binary(e, op, right));
             }
             
             return expr;
@@ -77,8 +78,8 @@ class Parser {
             if (!Match(BANG, MINUS)) return ParsePrimary();
             
             Token op = Previous();
-            Expr right = ParseUnary();
-            return new Unary(op, right);
+            Either<ParseError, Expr> right = ParseUnary();
+            return right.Map(expr => (Expr) new Unary(op, expr));
         }
 
         Either<ParseError, Expr> ParsePrimary() {
