@@ -1,4 +1,5 @@
-﻿using static Lox.TokenType;
+﻿using static Lox.Lox;
+using static Lox.TokenType;
 
 namespace Lox;
 
@@ -9,8 +10,18 @@ class Parser {
 
     private (Lst<Token> State, Expr Tree) ParseRec(Lst<Token> state, Expr tree) {
         int curr = 0;
-        
-        
+
+
+        Unit Synchronize() {
+            Advance();
+
+            AdvanceWhile(token => Previous().Type != SEMICOLON
+                                  && token.Type is not CLASS or FOR or FUN or IF or PRINT or RETURN or VAR or WHILE);
+
+            Advance();
+
+            return Unit();
+        }
         
         Expr ParseExpr() => ParseEquality();
 
@@ -62,7 +73,7 @@ class Parser {
             return expr;
         }
 
-        Expr ParseUnary() {
+        Either<ParseError, Expr> ParseUnary() {
             if (!Match(BANG, MINUS)) return ParsePrimary();
             
             Token op = Previous();
@@ -70,12 +81,16 @@ class Parser {
             return new Unary(op, right);
         }
 
-        Expr ParsePrimary() {
+        Either<ParseError, Expr> ParsePrimary() {
             if (Match(FALSE)) return new LiteralExpr(false);
             if (Match(TRUE)) return new LiteralExpr(true);
             if (Match(NIL)) return new LiteralExpr(null);
+            if (Match(L_PAREN)) {
+                Expr expr = ParseExpr();
+                return Consume(R_PAREN, "Expect ')' after grouping expression.").Map(_ => (Expr) new Grouping(expr));
+            }
             
-            
+            return Error(Peek(), "Expected expression.");
         }
         
         bool Match(params TokenType[] types) {
@@ -96,6 +111,26 @@ class Parser {
             if (!IsEnd()) curr++;
 
             return Previous();
+        }
+
+        Unit AdvanceWhile(Func<Token, bool> p) {
+            while (!IsEnd() && p(Peek())) 
+                Advance();
+
+            return Unit();
+        }
+
+        Either<ParseError, Token> Consume(TokenType type, string message) {
+            if (Check(type)) return Advance();
+            
+            return Error(Peek(), message);
+        }
+
+        ParseError Error(Token token, string message) {
+            if (token.Type == EOF)
+                return new(token, token.Line, Report(token.Line, " at end", message));
+            
+            return new(token, token.Line, Report(token.Line, " at '" + token.Lexeme + "'", message));
         }
 
         bool IsEnd() => Peek().Type == EOF;

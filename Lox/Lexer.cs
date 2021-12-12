@@ -1,5 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using Lox;
+using static Lox.Lox;
 using static Lox.TokenType;
 
 namespace Lox; 
@@ -75,7 +75,7 @@ class Lexer {
                 AdvanceWhile(x => x != '"');
 
                 if (IsEnd())
-                    return Report(new(line, "Unterminated string."));
+                    return Error(line, "Unterminated string.");
 
                 //closing "
                 Advance();
@@ -103,7 +103,7 @@ class Lexer {
 
                 return AddToken(type.Match(() => IDENTIFIER, t => t));
             default: 
-                return Report(new(line, $"Unexpected character {c}."));
+                return Error(line, $"Unexpected character {c}.");
         }
         
         [SuppressMessage("ReSharper", "InconsistentNaming")]
@@ -123,9 +123,9 @@ class Lexer {
             => DefaultBut(Tokens: tokens.Append(new Token(type, Curr(), literal, line)));
 
         ((string Str, int Line) State, Lst<Token> Tokens, Lst<LexError> Errors)
-            Report(LexError error)
+            Error(int line, string message)
 
-            => DefaultBut(Line: error.Line, Errors: errors.Append(error));
+            => DefaultBut(Line: line, Errors: errors.Append(new LexError(line, Report(line, "", message))));
 
         char Advance() => src[end++];
 
