@@ -39,7 +39,7 @@ switch (args.Length) {
 
 }
 
-static IO<LiveRuntime, Maybe<Lst<CodeError>>> RunFile(string path)
+static IO<LiveRuntime, Maybe<Lst<LexError>>> RunFile(string path)
     => from src in ReadAllText(path)
        select Run(src);
 

@@ -26,75 +26,24 @@ class Lexer {
     
     private readonly string _src;
     
-    public Lexer(string src)
-        => _src = src;
+    public Lexer(string src) => _src = src;
 
-    public (Lst<Token> Tokens, Lst<CodeError> Errors) Lex() {
-        (_, Lst<Token> tokens, Lst<CodeError> errors) = LexRec((_src, 0), Lst<Token>.Empty, Lst<CodeError>.Empty);
+    public (Lst<Token> Tokens, Lst<LexError> Errors) Lex() {
+        (_, Lst<Token> tokens, Lst<LexError> errors) = LexRec((_src, 0), Lst<Token>.Empty, Lst<LexError>.Empty);
 
         return (Tokens: tokens, Errors: errors);
     }
     
-    private ((string Str, int Line) State, Lst<Token> Tokens, Lst<CodeError> Errors) 
-        LexRec((string Str, int Line) state, Lst<Token> tokens, Lst<CodeError> errors) {
+    private ((string Str, int Line) State, Lst<Token> Tokens, Lst<LexError> Errors) 
+        LexRec((string Str, int Line) state, Lst<Token> tokens, Lst<LexError> errors) {
 
         int start = 0;
         int end = 0;
         string src = state.Str;
         int line = state.Line;
-        
+
         if (src == "") return (state, tokens.Append(new Token(EOF, "", Nothing, line)), errors);
         
-        [SuppressMessage("ReSharper", "InconsistentNaming")]
-        ((string Str, int Line) State, Lst<Token> Tokens, Lst<CodeError> Errors) 
-            DefaultBut(string? Src = null, int? Line = null, Lst<Token>? Tokens = null, Lst<CodeError>? Errors = null)
-        
-            => LexRec((Src ?? src[end..], Line ?? line), Tokens ?? tokens, Errors ?? errors);
-        
-        string Curr() => src[start..end];
-
-        ((string Str, int Line) State, Lst<Token> Tokens, Lst<CodeError> Errors) AddToken(TokenType type)
-            => AddLiteral(type, Nothing);
-        
-        ((string Str, int Line) State, Lst<Token> Tokens, Lst<CodeError> Errors)
-            AddLiteral(TokenType type, Maybe<Literal> literal)
-        
-            => DefaultBut(Tokens: tokens.Append(new Token(type, Curr(), literal, line)));
-
-        ((string Str, int Line) State, Lst<Token> Tokens, Lst<CodeError> Errors)
-            Report(CodeError error)
-
-            => DefaultBut(Line: error.Line, Errors: errors.Append(error));
-
-        char Advance() => src[end++];
-
-        string AdvanceWhile(Func<char, bool> p) {
-            string s = "";
-
-            Maybe<char> peek;
-            while ((peek = Peek()).IsJust && p(peek.NotNothing())) {
-                if (peek.NotNothing() == '\n') line++;
-                s += Advance();
-            }
-            
-            return s;
-        }
-        
-        bool Match(char c) {
-            if (IsEnd()) return false;
-            if (src[end] != c) return false;
-
-            end++;
-
-            return true;
-        }
-
-        Maybe<char> Peek() => IsEnd() ? Nothing : Just(src[end]);
-        
-        Maybe<char> PeekNext() => IsEnd() ? Nothing : Just(src[end + 1]);
-        
-        bool IsEnd() => end >= src.Length;
-
         char c = Advance();
 
         switch (c) { 
@@ -156,5 +105,55 @@ class Lexer {
             default: 
                 return Report(new(line, $"Unexpected character {c}."));
         }
+        
+        [SuppressMessage("ReSharper", "InconsistentNaming")]
+        ((string Str, int Line) State, Lst<Token> Tokens, Lst<LexError> Errors) 
+            DefaultBut(string? Src = null, int? Line = null, Lst<Token>? Tokens = null, Lst<LexError>? Errors = null)
+        
+            => LexRec((Src ?? src[end..], Line ?? line), Tokens ?? tokens, Errors ?? errors);
+        
+        string Curr() => src[start..end];
+
+        ((string Str, int Line) State, Lst<Token> Tokens, Lst<LexError> Errors) AddToken(TokenType type)
+            => AddLiteral(type, Nothing);
+        
+        ((string Str, int Line) State, Lst<Token> Tokens, Lst<LexError> Errors)
+            AddLiteral(TokenType type, Maybe<Literal> literal)
+        
+            => DefaultBut(Tokens: tokens.Append(new Token(type, Curr(), literal, line)));
+
+        ((string Str, int Line) State, Lst<Token> Tokens, Lst<LexError> Errors)
+            Report(LexError error)
+
+            => DefaultBut(Line: error.Line, Errors: errors.Append(error));
+
+        char Advance() => src[end++];
+
+        string AdvanceWhile(Func<char, bool> p) {
+            string s = "";
+
+            Maybe<char> peek;
+            while ((peek = Peek()).IsJust && p(peek.NotNothing())) {
+                if (peek.NotNothing() == '\n') line++;
+                s += Advance();
+            }
+            
+            return s;
+        }
+        
+        bool Match(char match) {
+            if (IsEnd()) return false;
+            if (src[end] != match) return false;
+
+            end++;
+
+            return true;
+        }
+
+        Maybe<char> Peek() => IsEnd() ? Nothing : Just(src[end]);
+        
+        Maybe<char> PeekNext() => IsEnd() ? Nothing : Just(src[end + 1]);
+        
+        bool IsEnd() => end >= src.Length;
     }
 }

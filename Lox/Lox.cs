@@ -1,9 +1,9 @@
 ﻿namespace Lox; 
 
 public static class Lox {
-    public static Maybe<Lst<CodeError>> Run(string src) {
+    public static Maybe<Lst<LexError>> Run(string src) {
         Lexer lexer = new(src);
-        (Lst<Token> tokens, Lst<CodeError> errors) = lexer.Lex();
+        (Lst<Token> tokens, Lst<LexError> errors) = lexer.Lex();
     
         foreach (Token token in tokens)
             Console.WriteLine(token);
